@@ -1,0 +1,74 @@
+# Configuração YAML do Agente (pode ser usado como alternativa ou complemento ao .env)
+
+agent:
+  name: "Agente IA Multicanal"
+  version: "0.1.0"
+  
+  # Configurações de comportamento
+  behavior:
+    max_retries: 3
+    timeout_seconds: 30
+    default_language: "pt-BR"
+    
+  # Configurações de contexto
+  context:
+    max_history_turns: 20
+    enable_long_term_memory: true
+    memory_retention_days: 90
+    
+  # Configurações de resposta
+  response:
+    max_length: 2000
+    enable_streaming: false
+    include_sources: true  # Incluir fontes quando usar RAG
+
+# Módulos
+modules:
+  whatsapp:
+    enabled: true
+    auto_reply: true
+    max_message_length: 4096
+    
+  voice:
+    enabled: true
+    silence_timeout_ms: 2000
+    max_speech_duration_ms: 30000
+    
+  rag:
+    enabled: true
+    top_k: 5
+    similarity_threshold: 0.7
+    chunk_size: 1000
+    chunk_overlap: 200
+    
+  calendly:
+    enabled: true
+    default_timezone: "America/Sao_Paulo"
+    reminder_hours_before: 24
+    
+  followup:
+    enabled: true
+    default_delay_hours: 24
+    max_followups_per_conversation: 3
+
+# Integrações
+integrations:
+  evolution_api:
+    version: "v2"
+    webhook_events:
+      - "messages.upsert"
+      - "messages.update"
+      
+  calendly:
+    webhook_events:
+      - "invitee.created"
+      - "invitee.canceled"
+
+# Logging
+logging:
+  level: "INFO"
+  format: "json"
+  file: "logs/agente.log"
+  max_size_mb: 100
+  backup_count: 5
+

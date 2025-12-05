@@ -1,0 +1,18 @@
+# Exemplo de arquivo docker-compose.override.yml
+# Copie para docker-compose.override.yml e ajuste conforme necessário
+# Este arquivo permite sobrescrever configurações do docker-compose.yml
+
+services:
+  api:
+    environment:
+      # Ajuste variáveis específicas do ambiente aqui
+      API_KEY: sua_chave_aqui
+      OPENAI_API_KEY: sua_chave_openai_aqui
+    # volumes:
+    #   - ./custom_data:/app/data
+
+  interface:
+    environment:
+      API_URL: http://api:8000
+      API_KEY: sua_chave_aqui
+

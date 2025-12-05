@@ -1,0 +1,131 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: agente-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-agente}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agente123}
+      POSTGRES_DB: ${POSTGRES_DB:-agente_db}
+    ports:
+      - "${POSTGRES_PORT:-30002}:5432"
+    # PostgreSQL não precisa expor porta externa em produção
+    # Descomente a linha acima apenas se precisar acessar diretamente
+    # ports: []
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agente}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agente-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: agente-redis
+    # Redis não expõe porta externa por padrão (segurança)
+    # Descomente a linha abaixo apenas se precisar acessar diretamente do host
+    # ports:
+    #   - "${REDIS_PORT:-30003}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agente-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agente-api
+    command: python -m src.main --mode api --port 8000
+    environment:
+      # Database
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-agente}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agente123}
+      POSTGRES_DB: ${POSTGRES_DB:-agente_db}
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # API
+      API_KEY: ${API_KEY}
+      ENABLE_API_AUTH: ${ENABLE_API_AUTH:-true}
+      # OpenAI
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o}
+      # Embeddings
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      # Modules
+      ENABLE_KNOWLEDGE: ${ENABLE_KNOWLEDGE:-true}
+      ENABLE_SCHEDULING: ${ENABLE_SCHEDULING:-true}
+      ENABLE_FOLLOWUP: ${ENABLE_FOLLOWUP:-true}
+      ENABLE_VOICE: ${ENABLE_VOICE:-false}
+      # RAG
+      RAG_CHUNK_SIZE: ${RAG_CHUNK_SIZE:-1000}
+      RAG_CHUNK_OVERLAP: ${RAG_CHUNK_OVERLAP:-200}
+      RAG_TOP_K: ${RAG_TOP_K:-5}
+      RAG_SIMILARITY_THRESHOLD: ${RAG_SIMILARITY_THRESHOLD:-0.3}
+      # WhatsApp (opcional)
+      EVOLUTION_API_URL: ${EVOLUTION_API_URL:-}
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-}
+      EVOLUTION_INSTANCE_NAME: ${EVOLUTION_INSTANCE_NAME:-}
+      # Calendly (opcional)
+      CALENDLY_API_KEY: ${CALENDLY_API_KEY:-}
+      # Voice (opcional)
+      VOICE_PROVIDER: ${VOICE_PROVIDER:-}
+      GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS:-}
+    ports:
+      - "${API_PORT:-30000}:8000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - agente-network
+    restart: unless-stopped
+
+  interface:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agente-interface
+    command: streamlit run interface.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
+    environment:
+      API_URL: ${API_URL:-http://api:8000}
+      API_KEY: ${API_KEY}
+    ports:
+      - "${INTERFACE_PORT:-30001}:8501"
+    volumes:
+      - ./interface.py:/app/interface.py:ro
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - agente-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  agente-network:
+    driver: bridge
