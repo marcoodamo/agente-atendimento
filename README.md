@@ -2,39 +2,41 @@
 
 Sistema de atendimento ao cliente baseado em Inteligência Artificial com suporte a múltiplos canais (WhatsApp, Voz, Web Chat) e funcionalidades de RAG, agendamento automático e follow-up.
 
-## 🚀 Início Rápido
+## 🚀 Início Rápido (Um Único Comando)
 
-### Opção 1: Docker Compose (Recomendado para Deploy)
-
-```bash
-# 1. Configurar ambiente
-cp .env.example .env  # Edite com suas credenciais
-
-# 2. Iniciar tudo com Docker
-docker-compose up -d
-
-# 3. Verificar status
-docker-compose ps
-
-# 4. Ver logs
-docker-compose logs -f
-```
-
-A API estará disponível em `http://localhost:8000` e a interface em `http://localhost:8501`.
-
-**📖 Veja [Deploy](docs/deploy.md) e [Segurança](docs/seguranca.md) para guias completos.**
-
-### Opção 2: Script Automatizado
+### Ambiente Zerado? Siga estes passos:
 
 ```bash
-# 1. Configurar ambiente
-cp .env.example .env  # Edite com suas credenciais
+# 1. Clone o repositório
+git clone https://github.com/marcoodamo/agente-atendimento.git
+cd agente-atendimento
 
-# 2. Iniciar tudo (Docker Compose)
+# 2. Configure credenciais (OBRIGATÓRIO antes de iniciar)
+cp .env.example .env
+# Edite o .env e configure:
+#   - API_KEY (gere com: openssl rand -hex 32)
+#   - OPENAI_API_KEY (sua chave da OpenAI)
+
+# 3. INICIE TUDO COM UM ÚNICO COMANDO
 ./start.sh
 ```
 
-Este script verifica dependências, inicia Docker se necessário, e sobe todos os serviços.
+**É isso!** O script `start.sh`:
+- ✅ Verifica se Docker está instalado e rodando
+- ✅ Cria o arquivo .env se não existir
+- ✅ Valida credenciais obrigatórias
+- ✅ Constrói e inicia todos os containers
+- ✅ Cria banco de dados e tabelas automaticamente
+- ✅ Inicializa todos os serviços
+
+Após executar `./start.sh`, tudo estará funcionando:
+- 📡 **API**: http://localhost:30000
+- 📚 **Docs API**: http://localhost:30000/docs
+- 🌐 **Interface Web**: http://localhost:30001
+
+**Nenhuma configuração manual adicional é necessária!** O banco de dados, tabelas e conexões são criados automaticamente.
+
+**📖 Veja [Deploy](docs/deploy.md) e [Segurança](docs/seguranca.md) para guias completos.**
 
 ## 📚 Documentação Completa
 

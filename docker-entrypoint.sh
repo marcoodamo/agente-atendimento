@@ -15,7 +15,9 @@ wait_for_postgres() {
             return 0
         fi
         attempt=$((attempt + 1))
-        echo "PostgreSQL não está pronto ainda. Tentativa $attempt/$max_attempts..."
+        if [ $((attempt % 5)) -eq 0 ]; then
+            echo "   Aguardando... ($attempt/$max_attempts)"
+        fi
         sleep 2
     done
     
@@ -35,7 +37,9 @@ wait_for_redis() {
             return 0
         fi
         attempt=$((attempt + 1))
-        echo "Redis não está pronto ainda. Tentativa $attempt/$max_attempts..."
+        if [ $((attempt % 5)) -eq 0 ]; then
+            echo "   Aguardando... ($attempt/$max_attempts)"
+        fi
         sleep 2
     done
     
@@ -47,14 +51,11 @@ wait_for_redis() {
 wait_for_postgres || exit 1
 wait_for_redis || exit 1
 
-# Criar banco de dados se não existir (apenas para API)
-if [ "$1" = "python" ] && [[ "$*" == *"src.main"* ]]; then
-    echo "📦 Verificando banco de dados..."
-    python scripts/create_db.py || echo "⚠️ Banco de dados já existe ou erro ao criar"
-    
-    echo "📋 Inicializando tabelas..."
-    python scripts/init_db.py || echo "⚠️ Tabelas já existem ou erro ao inicializar"
-fi
+# Nota: 
+# - O banco de dados é criado automaticamente pelo docker-compose (POSTGRES_DB)
+# - A extensão pgvector já está na imagem pgvector/pgvector
+# - As tabelas são criadas automaticamente pelo RAGService quando a API inicia
+# Não é necessário fazer nada aqui - tudo é automático!
 
 # Executar comando passado
 echo "▶️ Executando: $@"

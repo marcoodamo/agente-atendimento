@@ -77,15 +77,46 @@ if [ ! -f .env ]; then
         echo "📝 Copiando .env.example para .env..."
         cp .env.example .env
         echo -e "${YELLOW}✅ Arquivo .env criado.${NC}"
-        echo -e "${RED}⚠️  IMPORTANTE: Edite o arquivo .env e configure suas credenciais!${NC}"
-        echo "   Especialmente: API_KEY, OPENAI_API_KEY"
         echo ""
-        echo "   Depois, execute novamente: ./start.sh"
+        echo -e "${RED}⚠️  IMPORTANTE: Configure as credenciais obrigatórias no arquivo .env!${NC}"
+        echo ""
+        echo -e "${BLUE}Credenciais obrigatórias:${NC}"
+        echo "   1. API_KEY - Gere uma chave segura (ex: openssl rand -hex 32)"
+        echo "   2. OPENAI_API_KEY - Sua chave da OpenAI"
+        echo ""
+        echo "Valores padrão que podem funcionar para teste:"
+        echo "   POSTGRES_PASSWORD=agente123 (usado pelo Docker)"
+        echo ""
+        echo -e "${BLUE}Depois de configurar, execute novamente:${NC} ./start.sh"
+        echo ""
         exit 1
     else
         echo -e "${RED}❌ Arquivo .env.example não encontrado!${NC}"
         exit 1
     fi
+fi
+
+# Verificar se API_KEY está configurada
+if ! grep -q "^API_KEY=.*[^[:space:]]" .env 2>/dev/null; then
+    echo -e "${YELLOW}⚠️  API_KEY não está configurada no .env!${NC}"
+    echo ""
+    echo -e "${BLUE}Para gerar uma API_KEY segura, execute:${NC}"
+    echo "   openssl rand -hex 32"
+    echo ""
+    echo "Depois, adicione ao .env:"
+    echo "   API_KEY=chave_gerada_aqui"
+    echo ""
+    exit 1
+fi
+
+# Verificar se OPENAI_API_KEY está configurada
+if ! grep -q "^OPENAI_API_KEY=.*[^[:space:]]" .env 2>/dev/null; then
+    echo -e "${YELLOW}⚠️  OPENAI_API_KEY não está configurada no .env!${NC}"
+    echo ""
+    echo -e "${BLUE}Configure sua chave da OpenAI no arquivo .env:${NC}"
+    echo "   OPENAI_API_KEY=sk-..."
+    echo ""
+    exit 1
 fi
 
 # Iniciar serviços
@@ -94,8 +125,8 @@ $COMPOSE_CMD up -d --build
 
 # Aguardar serviços estarem prontos
 echo ""
-echo -e "${BLUE}⏳ Aguardando serviços iniciarem...${NC}"
-sleep 8
+echo -e "${BLUE}⏳ Aguardando serviços iniciarem e inicializarem banco de dados...${NC}"
+sleep 10
 
 # Verificar status
 echo ""
@@ -122,9 +153,15 @@ if $COMPOSE_CMD ps | grep -q "Up"; then
     echo -e "${BLUE}🧪 Testar API:${NC}"
     echo "   ./test_api.sh"
     echo ""
+    echo -e "${GREEN}✨ Sistema pronto para uso!${NC}"
+    echo ""
+    echo -e "${BLUE}💡 Dica:${NC} O banco de dados e tabelas foram criados automaticamente."
+    echo "   Você pode começar a usar a API e fazer upload de documentos na Interface Web."
+    echo ""
 else
     echo ""
     echo -e "${YELLOW}⚠️  Alguns serviços podem não ter iniciado corretamente${NC}"
     echo "   Verifique os logs: $COMPOSE_CMD logs"
+    echo "   Ou logs específicos: $COMPOSE_CMD logs api"
     exit 1
 fi
